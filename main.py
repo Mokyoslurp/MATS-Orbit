@@ -10,6 +10,8 @@ from org.orekit.propagation.analytical.tle import TLE, TLEPropagator
 
 from math import radians, pi
 import plotly.express as px
+import geopandas
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
@@ -88,6 +90,9 @@ data_frame["longitude"] = np.degrees(data_frame.ground_point.apply(lambda gp: gp
 data_frame["visible"] = data_frame.elevation.apply(
     lambda elevation: "Yes" if elevation > 0 else "No"
 )
+data_frame["visible_color"] = data_frame.elevation.apply(
+    lambda elevation: "#FF0000" if elevation > 0 else "#0000FF"
+)
 
 
 # Plot
@@ -113,3 +118,33 @@ fig2 = px.scatter_geo(
 
 fig1.show()
 fig2.show()
+
+
+# Getting world map data from geo pandas
+url = "https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip"
+worldmap = geopandas.read_file(url)
+
+# Creating axes and plotting world map
+fig, ax = plt.subplots(figsize=(16, 10))
+worldmap.plot(color="lightgrey", ax=ax)
+
+x = data_frame["longitude"]
+y = data_frame["latitude"]
+z = data_frame["visible_color"]
+plt.scatter(
+    x,
+    y,
+    c=z,
+    alpha=0.6,
+    cmap="autumn",
+)
+# plt.colorbar(label='Ground track')
+
+# Creating axis limits and title
+plt.xlim([-180, 180])
+plt.ylim([-90, 90])
+
+plt.title("Ground track")
+plt.xlabel("Longitude")
+plt.ylabel("Latitude")
+plt.show()
