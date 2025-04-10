@@ -86,11 +86,8 @@ data_frame["ground_point"] = data_frame["pv"].apply(
 data_frame["latitude"] = np.degrees(data_frame.ground_point.apply(lambda gp: gp.latitude))
 data_frame["longitude"] = np.degrees(data_frame.ground_point.apply(lambda gp: gp.longitude))
 
-# Visible if satellite is in visibility cone of Esrange
+# Visible if satellite is in visibility cone of Esrange, Red if visible, Blue if not
 data_frame["visible"] = data_frame.elevation.apply(
-    lambda elevation: "Yes" if elevation > 0 else "No"
-)
-data_frame["visible_color"] = data_frame.elevation.apply(
     lambda elevation: "#FF0000" if elevation > 0 else "#0000FF"
 )
 
@@ -130,7 +127,7 @@ worldmap.plot(color="lightgrey", ax=ax)
 
 x = data_frame["longitude"]
 y = data_frame["latitude"]
-z = data_frame["visible_color"]
+z = data_frame["visible"]
 plt.scatter(
     x,
     y,
