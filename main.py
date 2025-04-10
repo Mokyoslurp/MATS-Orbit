@@ -1,20 +1,18 @@
 import orekit
 from orekit.pyhelpers import setup_orekit_curdir
 from org.orekit.utils import TimeStampedPVCoordinates
-from org.orekit.frames import TopocentricFrame
-from org.orekit.bodies import GeodeticPoint
+
 from org.orekit.time import TimeScalesFactory, AbsoluteDate
 from org.orekit.propagation import Propagator
 from org.orekit.propagation.analytical.tle import TLE, TLEPropagator
 
 
-from math import radians
 import plotly.express as px
 import geopandas
 import matplotlib.pyplot as plt
 
 from functions import (
-    EARTH,
+    ESRANGE_FRAME,
     INERTIAL_FRAME,
     build_data_frame,
 )
@@ -31,12 +29,6 @@ tles = [TLE(tle_lines[2 * i], tle_lines[2 * i + 1]) for i in range(len(tle_lines
 
 tle = tles[0]
 
-# Definition of Esrange station
-longitude = radians(21.063)
-latitude = radians(67.878)
-altitude = 341.0
-station = GeodeticPoint(latitude, longitude, altitude)
-station_frame = TopocentricFrame(EARTH, station, "Esrange")
 
 # Propagation
 # (Cast is necessary here because Java does not have auto type casting so we have to do it in python)
@@ -55,7 +47,7 @@ while extrapolated_date.compareTo(final_date) <= 0.0:
     # Increment date
     extrapolated_date = extrapolated_date.shiftedBy(10.0)
 
-data_frame = build_data_frame(pv_vectors, INERTIAL_FRAME, station_frame)
+data_frame = build_data_frame(pv_vectors, INERTIAL_FRAME, ESRANGE_FRAME)
 
 
 # Plot
