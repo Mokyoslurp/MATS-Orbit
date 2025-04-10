@@ -18,7 +18,7 @@ def plot_elevation(data_frame: pd.DataFrame):
 
 def plot_earth_3D(data_frame: pd.DataFrame):
     fig = px.scatter_geo(
-        data_frame["2002-05-07":"2002-05-07"],
+        data_frame,
         color="visible",
         lat="latitude",
         lon="longitude",
