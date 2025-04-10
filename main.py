@@ -104,7 +104,6 @@ fig1 = px.line(
 
 fig2 = px.scatter_geo(
     data_frame["2002-05-07":"2002-05-07"],
-    animation_frame="hour",
     color="visible",
     lat="latitude",
     lon="longitude",
