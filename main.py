@@ -1,28 +1,26 @@
 import orekit
-from orekit.pyhelpers import setup_orekit_curdir, absolutedate_to_datetime
-from org.orekit.utils import Constants, IERSConventions, TimeStampedPVCoordinates
-from org.orekit.frames import FramesFactory, TopocentricFrame
-from org.orekit.bodies import OneAxisEllipsoid, GeodeticPoint
+from orekit.pyhelpers import setup_orekit_curdir
+from org.orekit.utils import TimeStampedPVCoordinates
+from org.orekit.frames import TopocentricFrame
+from org.orekit.bodies import GeodeticPoint
 from org.orekit.time import TimeScalesFactory, AbsoluteDate
 from org.orekit.propagation import Propagator
 from org.orekit.propagation.analytical.tle import TLE, TLEPropagator
 
 
-from math import radians, pi
+from math import radians
 import plotly.express as px
 import geopandas
 import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
 
-# Initialize Orekit
+from functions import (
+    EARTH,
+    INERTIAL_FRAME,
+    build_data_frame,
+)
+
 vm = orekit.initVM()
 setup_orekit_curdir()
-
-
-# Define base frames
-ITRF = FramesFactory.getITRF(IERSConventions.IERS_2010, True)
-inertial_frame = FramesFactory.getEME2000()
 
 
 # Load TLEs from file (only keep the first for now)
@@ -34,15 +32,11 @@ tles = [TLE(tle_lines[2 * i], tle_lines[2 * i + 1]) for i in range(len(tle_lines
 tle = tles[0]
 
 # Definition of Esrange station
-earth = OneAxisEllipsoid(
-    Constants.WGS84_EARTH_EQUATORIAL_RADIUS, Constants.WGS84_EARTH_FLATTENING, ITRF
-)
-
 longitude = radians(21.063)
 latitude = radians(67.878)
 altitude = 341.0
 station = GeodeticPoint(latitude, longitude, altitude)
-station_frame = TopocentricFrame(earth, station, "Esrange")
+station_frame = TopocentricFrame(EARTH, station, "Esrange")
 
 # Propagation
 # (Cast is necessary here because Java does not have auto type casting so we have to do it in python)
@@ -55,41 +49,13 @@ pv_vectors: list[TimeStampedPVCoordinates] = []
 
 while extrapolated_date.compareTo(final_date) <= 0.0:
     # Get Position and velocity
-    pv = propagator.getPVCoordinates(extrapolated_date, inertial_frame)
+    pv = propagator.getPVCoordinates(extrapolated_date, INERTIAL_FRAME)
     pv_vectors.append(pv)
 
     # Increment date
     extrapolated_date = extrapolated_date.shiftedBy(10.0)
 
-
-# Populate data frame
-data_frame = pd.DataFrame(data=pv_vectors, columns=["pv"])
-
-data_frame["datetime"] = data_frame["pv"].apply(lambda x: absolutedate_to_datetime(x.getDate()))
-data_frame["day"] = data_frame.datetime.dt.dayofyear
-data_frame["hour"] = data_frame.datetime.dt.hour
-data_frame.set_index("datetime", inplace=True, drop=False)
-data_frame.index.name = "Timestamp"
-
-
-data_frame["position"] = pv.getPosition()
-data_frame["elevation"] = data_frame["pv"].apply(
-    lambda x: station_frame.getElevation(x.getPosition(), inertial_frame, x.getDate()) * 180.0 / pi
-)
-data_frame["azimuth"] = data_frame["pv"].apply(
-    lambda x: station_frame.getAzimuth(x.getPosition(), inertial_frame, x.getDate()) * 180.0 / pi
-)
-
-data_frame["ground_point"] = data_frame["pv"].apply(
-    lambda pv: earth.transform(pv.position, inertial_frame, pv.date)
-)
-data_frame["latitude"] = np.degrees(data_frame.ground_point.apply(lambda gp: gp.latitude))
-data_frame["longitude"] = np.degrees(data_frame.ground_point.apply(lambda gp: gp.longitude))
-
-# Visible if satellite is in visibility cone of Esrange, Red if visible, Blue if not
-data_frame["visible"] = data_frame.elevation.apply(
-    lambda elevation: "#FF0000" if elevation > 0 else "#0000FF"
-)
+data_frame = build_data_frame(pv_vectors, INERTIAL_FRAME, station_frame)
 
 
 # Plot
