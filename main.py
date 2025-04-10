@@ -1,10 +1,11 @@
 import orekit
 from orekit.pyhelpers import setup_orekit_curdir
-from org.orekit.propagation.analytical.tle import TLE
+
 
 from functions import (
     ESRANGE_FRAME,
     INERTIAL_FRAME,
+    load_tles,
     propagate_all,
     build_data_frame,
     plot_elevation,
@@ -16,13 +17,8 @@ vm = orekit.initVM()
 setup_orekit_curdir()
 
 
-# Load TLEs from file (only keep the first for now)
-with open("data/sat000054227.txt") as tle_file:
-    tle_lines = tle_file.readlines()
-
-tles = [TLE(tle_lines[2 * i], tle_lines[2 * i + 1]) for i in range(len(tle_lines) // 2)]
-tles = tles[0:2]
-
+tles = load_tles("data/sat000054227.txt")
+tles = tles[0:3]
 
 # Propagation
 pv_vectors = propagate_all(tles)
