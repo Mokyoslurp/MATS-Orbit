@@ -3,8 +3,8 @@ from math import pi
 import numpy as np
 
 from orekit.pyhelpers import absolutedate_to_datetime
-from org.orekit.utils import TimeStampedPVCoordinates
-from org.orekit.frames import Frame
+from org.orekit.utils import TimeStampedPVCoordinates  # type: ignore
+from org.orekit.frames import Frame  # type: ignore
 
 
 from .constants import EARTH

@@ -1,4 +1,4 @@
-from org.orekit.propagation.analytical.tle import TLE
+from org.orekit.propagation.analytical.tle import TLE  # type: ignore
 
 
 def load_tles(file_path: str):

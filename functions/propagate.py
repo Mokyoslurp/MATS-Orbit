@@ -1,7 +1,7 @@
-from org.orekit.utils import TimeStampedPVCoordinates
-from org.orekit.time import AbsoluteDate
-from org.orekit.propagation import Propagator
-from org.orekit.propagation.analytical.tle import TLE, TLEPropagator
+from org.orekit.utils import TimeStampedPVCoordinates  # type: ignore
+from org.orekit.time import AbsoluteDate  # type: ignore
+from org.orekit.propagation import Propagator  # type: ignore
+from org.orekit.propagation.analytical.tle import TLE, TLEPropagator  # type: ignore
 
 
 from .constants import INERTIAL_FRAME

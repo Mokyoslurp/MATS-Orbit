@@ -1,6 +1,6 @@
-from org.orekit.utils import Constants, IERSConventions
-from org.orekit.bodies import OneAxisEllipsoid, GeodeticPoint
-from org.orekit.frames import FramesFactory, TopocentricFrame
+from org.orekit.utils import Constants, IERSConventions  # type: ignore
+from org.orekit.bodies import OneAxisEllipsoid, GeodeticPoint  # type: ignore
+from org.orekit.frames import FramesFactory, TopocentricFrame  # type: ignore
 
 from math import radians
 
