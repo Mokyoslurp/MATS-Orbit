@@ -6,3 +6,4 @@ setup_orekit_curdir()
 
 from .build_data_frame import build_data_frame
 from .constants import EARTH, INERTIAL_FRAME, ESRANGE_FRAME
+from .plots import plot_earth_2D, plot_earth_3D, plot_elevation
