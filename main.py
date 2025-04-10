@@ -1,7 +1,3 @@
-import orekit
-from orekit.pyhelpers import setup_orekit_curdir
-
-
 from functions import (
     ESRANGE_FRAME,
     INERTIAL_FRAME,
@@ -12,9 +8,6 @@ from functions import (
     plot_earth_2D,
     plot_earth_3D,
 )
-
-vm = orekit.initVM()
-setup_orekit_curdir()
 
 
 tles = load_tles("data/sat000054227.txt")
