@@ -2,9 +2,11 @@ from org.orekit.utils import TimeStampedPVCoordinates  # type: ignore
 from org.orekit.time import AbsoluteDate, TimeScalesFactory  # type: ignore
 from org.orekit.propagation import Propagator  # type: ignore
 from org.orekit.propagation.analytical.tle import TLE, TLEPropagator  # type: ignore
+from org.orekit.propagation.events import EclipseDetector, EventsLogger, AbstractDetector  # type: ignore
+from org.orekit.propagation.events.handlers import ContinueOnEvent  # type: ignore
 
 
-from .constants import INERTIAL_FRAME
+from .constants import INERTIAL_FRAME, SUN_RADIUS, SUN, EARTH
 
 
 def _find_tle(tles: list[TLE], date: AbsoluteDate):
@@ -15,6 +17,25 @@ def _find_tle(tles: list[TLE], date: AbsoluteDate):
         tle = tles[i]
 
     return i, tle
+
+
+def detect_events(
+    tle: TLE,
+    start_date: AbsoluteDate,
+    end_date: AbsoluteDate,
+    detectors: list[AbstractDetector],
+):
+    propagator: Propagator = Propagator.cast_(TLEPropagator.selectExtrapolator(tle))
+
+    logger = EventsLogger()
+    for detector in detectors:
+        logged_detector = logger.monitorDetector(detector)
+        propagator.addEventDetector(logged_detector)
+
+    # Used to trigger events
+    propagator.propagate(start_date, end_date)
+
+    return logger.getLoggedEvents()
 
 
 def propagate_one(
@@ -39,7 +60,11 @@ def propagate_one(
 
 
 def propagate_all(
-    tles: list[TLE], start_date=list[int], end_date=list[int], time_step: float = 10.0
+    tles: list[TLE],
+    start_date=list[int],
+    end_date=list[int],
+    time_step: float = 10.0,
+    detect_eclipse: bool = True,
 ):
     start_date = AbsoluteDate(
         start_date[0],
@@ -70,7 +95,15 @@ def propagate_all(
 
     date = start_date
 
+    # Initialize the detectors
+    detectors = []
+    if detect_eclipse:
+        detectors.append(
+            EclipseDetector(SUN, SUN_RADIUS, EARTH).withUmbra().withHandler(ContinueOnEvent())
+        )
+
     pv_vectors = []
+    events = []
 
     while date.compareTo(end_date) < 0:
         i, tle = _find_tle(tles, date)
@@ -85,7 +118,8 @@ def propagate_all(
                 next_date = end_date
 
         pv_vectors += propagate_one(tle, date, next_date, time_step)
+        events += detect_events(tle, start_date, end_date, detectors)
 
         date = next_date
 
-    return pv_vectors
+    return pv_vectors, events
