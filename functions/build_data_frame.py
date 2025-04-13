@@ -5,6 +5,7 @@ import numpy as np
 from orekit.pyhelpers import absolutedate_to_datetime
 from org.orekit.utils import TimeStampedPVCoordinates  # type: ignore
 from org.orekit.frames import Frame  # type: ignore
+from org.orekit.propagation.events import EventsLogger  # type: ignore
 
 
 from .constants import EARTH
@@ -54,3 +55,24 @@ def build_data_frame(
     )
 
     return data_frame
+
+
+def build_eclipse_data_frame(events: list[EventsLogger.LoggedEvent]):
+    start_time = None
+    result = []
+
+    for event in events:
+        if not event.isIncreasing():
+            start_time = event.getState().getDate()
+        elif start_time:
+            stop_time = event.getState().getDate()
+            result.append(
+                {
+                    "Start": absolutedate_to_datetime(start_time),
+                    "Stop": absolutedate_to_datetime(stop_time),
+                    "EclipseDuration": stop_time.durationFrom(start_time) / 60,
+                }
+            )
+            start_time = None
+    result_df = pd.DataFrame.from_dict(result)
+    return result_df
