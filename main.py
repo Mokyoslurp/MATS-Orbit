@@ -11,10 +11,16 @@ from functions import (
 
 
 tles = load_tles("data/sat000054227.txt")
-tles = tles[0:3]
+
+# Set time interval: Year, Month, Day, Hour, Minute, Second (UTC)
+start_date = [2022, 11, 20, 0, 0, 0.0]
+end_date = [2022, 11, 26, 0, 0, 0.0]
+
+# start_date = [2025, 2, 20, 0, 0, 0.0]
+# end_date = [2025, 2, 26, 0, 0, 0.0]
 
 # Propagation
-pv_vectors = propagate_all(tles)
+pv_vectors = propagate_all(tles, start_date, end_date)
 
 data_frame = build_data_frame(pv_vectors, INERTIAL_FRAME, ESRANGE_FRAME)
 

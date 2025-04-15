@@ -1,5 +1,5 @@
 from org.orekit.utils import Constants, IERSConventions  # type: ignore
-from org.orekit.bodies import OneAxisEllipsoid, GeodeticPoint  # type: ignore
+from org.orekit.bodies import OneAxisEllipsoid, GeodeticPoint, CelestialBodyFactory  # type: ignore
 from org.orekit.frames import FramesFactory, TopocentricFrame  # type: ignore
 
 from math import radians
@@ -10,6 +10,8 @@ INERTIAL_FRAME = FramesFactory.getEME2000()
 EARTH = OneAxisEllipsoid(
     Constants.WGS84_EARTH_EQUATORIAL_RADIUS, Constants.WGS84_EARTH_FLATTENING, ITRF
 )
+SUN = CelestialBodyFactory.getSun()
+SUN_RADIUS = 696000000.0
 
 # Definition of Esrange station
 _longitude = radians(21.063)
