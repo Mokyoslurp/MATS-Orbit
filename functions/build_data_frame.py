@@ -2,13 +2,17 @@ import pandas as pd
 from math import pi
 import numpy as np
 
+from org.hipparchus.geometry.euclidean.threed import Vector3D  # type: ignore
+
 from orekit.pyhelpers import absolutedate_to_datetime
 from org.orekit.utils import TimeStampedPVCoordinates  # type: ignore
 from org.orekit.frames import Frame  # type: ignore
 from org.orekit.propagation.events import EventsLogger  # type: ignore
+from org.orekit.frames import StaticTransform  # type: ignore
+from org.orekit.time import AbsoluteDate  # type: ignore
 
 
-from .constants import EARTH
+from .constants import EARTH, SUN, INERTIAL_FRAME
 
 
 def build_data_frame(
@@ -22,6 +26,43 @@ def build_data_frame(
     :param pv_vectors: A list of TimeStampedPVCoordinates of the satellite through time
     :return: The populated data frame
     """
+    # Lists initialization
+    earth_positions: list[Vector3D] = []
+    positions: list[Vector3D] = []
+    positions_from_earth: list[Vector3D] = []
+    dates: list[AbsoluteDate] = []
+
+    # Fill lists
+    for pv_vector in pv_vectors:
+        dates.append(pv_vector.getDate())
+        # transform from Earth inertial frame to Sun inertial frame
+        transform: StaticTransform = StaticTransform.cast_(
+            INERTIAL_FRAME.getTransformTo(SUN.getInertiallyOrientedFrame(), dates[-1])
+        )
+
+        earth_positions.append(transform.transformPosition(Vector3D.ZERO))
+        positions.append(transform.transformPosition(pv_vector.getPosition()))
+        positions_from_earth.append(pv_vector.getPosition())
+
+    # Convert Vector3D structure to a numpy array
+    earth_positions = np.array([[p.getX(), p.getY(), p.getZ()] for p in earth_positions]) / 1000
+    positions = np.array([[p.getX(), p.getY(), p.getZ()] for p in positions]) / 1000
+    positions_from_earth = (
+        np.array([[p.getX(), p.getY(), p.getZ()] for p in positions_from_earth]) / 1000
+    )
+
+    # Vectors of interest
+    earth_satellite_vector = positions - earth_positions
+    satellite_sun_vector = -positions
+
+    # Compute Solar Zenith Angle
+    num = np.multiply(earth_satellite_vector, satellite_sun_vector).sum(1)
+    den = np.multiply(
+        np.linalg.norm(earth_satellite_vector, axis=1), np.linalg.norm(satellite_sun_vector, axis=1)
+    )
+
+    sza = np.rad2deg(np.acos(np.divide(num, den)))
+
     # Populate data frame
     data_frame = pd.DataFrame(data=pv_vectors, columns=["pv"])
 
@@ -53,6 +94,19 @@ def build_data_frame(
     data_frame["visible"] = data_frame.elevation.apply(
         lambda elevation: "#FF0000" if elevation > 0 else "#0000FF"
     )
+
+    # Positions of objects
+    data_frame["x_earth"] = earth_positions[:, 0]
+    data_frame["y_earth"] = earth_positions[:, 1]
+    data_frame["z_earth"] = earth_positions[:, 2]
+    data_frame["x"] = positions[:, 0]
+    data_frame["y"] = positions[:, 1]
+    data_frame["z"] = positions[:, 2]
+    data_frame["x_local"] = positions_from_earth[:, 0]
+    data_frame["y_local"] = positions_from_earth[:, 1]
+    data_frame["z_local"] = positions_from_earth[:, 2]
+
+    data_frame["sza"] = sza
 
     return data_frame
 
