@@ -1,7 +1,56 @@
 import plotly.express as px
+import plotly.graph_objects as go
 import geopandas
 import matplotlib.pyplot as plt
 import pandas as pd
+
+
+def plot_local_orbit(data_frames: list[pd.DataFrame]):
+    fig = go.Figure()
+    for data_frame in data_frames:
+        fig.add_trace(
+            go.Scatter3d(
+                x=data_frame["x_local"],
+                y=data_frame["y_local"],
+                z=data_frame["z_local"],
+            )
+        )
+    fig.add_trace(go.Scatter3d(x=[0, 0], y=[0, 0], z=[0, 0]))
+
+    fig.show()
+
+
+def plot_global_orbit(data_frames: list[pd.DataFrame]):
+    fig = go.Figure()
+    for data_frame in data_frames:
+        fig.add_trace(
+            go.Scatter3d(
+                x=data_frame["x"],
+                y=data_frame["y"],
+                z=data_frame["z"],
+            )
+        )
+    fig.add_trace(
+        go.Scatter3d(
+            x=data_frame["x_earth"],
+            y=data_frame["y_earth"],
+            z=data_frame["z_earth"],
+        )
+    )
+    fig.show()
+
+
+def plot_sza(data_frames: list[pd.DataFrame]):
+    fig = go.Figure()
+    for data_frame in data_frames:
+        fig.add_trace(
+            go.Scatter(
+                x=data_frame["datetime"],
+                y=data_frame["sza"],
+            )
+        )
+
+    fig.show()
 
 
 def plot_elevation(data_frame: pd.DataFrame):
