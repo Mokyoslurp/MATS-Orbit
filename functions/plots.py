@@ -103,3 +103,14 @@ def plot_earth_2D(data_frame: pd.DataFrame):
     plt.xlabel("Longitude")
     plt.ylabel("Latitude")
     plt.show()
+
+
+def plot_apses(data_frame: pd.DataFrame):
+    fig = px.line(
+        data_frame,
+        y=["perigee", "apogee"],
+        x="datetime",
+        hover_name="datetime",
+    )
+
+    fig.show()
