@@ -1,13 +1,15 @@
 import pandas as pd
 from math import pi
 import numpy as np
+from datetime import datetime
 
 from org.hipparchus.geometry.euclidean.threed import Vector3D  # type: ignore
 
 from orekit.pyhelpers import absolutedate_to_datetime
-from org.orekit.utils import TimeStampedPVCoordinates  # type: ignore
+from org.orekit.utils import TimeStampedPVCoordinates, Constants  # type: ignore
 from org.orekit.frames import Frame  # type: ignore
 from org.orekit.propagation.events import EventsLogger  # type: ignore
+from org.orekit.propagation.analytical.tle import TLE  # type: ignore
 from org.orekit.frames import StaticTransform  # type: ignore
 from org.orekit.time import AbsoluteDate  # type: ignore
 
@@ -107,6 +109,53 @@ def build_data_frame(
     data_frame["z_local"] = positions_from_earth[:, 2]
 
     data_frame["sza"] = sza
+
+    return data_frame
+
+
+def build_orbit_parameters_data_frame(tles: list[TLE]):
+    dates: list[datetime] = []
+    n: list[float] = []
+    e: list[float] = []
+    a: list[float] = []
+    rp: list[float] = []
+    ra: list[float] = []
+    hp: list[float] = []
+    ha: list[float] = []
+
+    for tle in tles:
+        dates.append(absolutedate_to_datetime(tle.getDate()))
+
+        n.append(tle.getMeanMotion())
+        e.append(tle.getE())
+
+        a.append((Constants.WGS84_EARTH_MU * (86400 / (2 * pi * n[-1])) ** 2) ** (1 / 3))
+        rp.append(a[-1] * (1 - e[-1]))
+        ra.append(a[-1] * (1 + e[-1]))
+        hp.append(rp[-1] - Constants.WGS84_EARTH_EQUATORIAL_RADIUS)
+        ha.append(ra[-1] - Constants.WGS84_EARTH_EQUATORIAL_RADIUS)
+
+    data = zip(tles, dates, n, e, a, rp, ra, hp, ha)
+
+    data_frame = pd.DataFrame(
+        data=data,
+        columns=[
+            "tle",
+            "datetime",
+            "mean_motion",
+            "eccentricity",
+            "semi_major_axis",
+            "perigee",
+            "apogee",
+            "perigee_altitude",
+            "apogee_altitude",
+        ],
+    )
+
+    data_frame["day"] = data_frame.datetime.dt.dayofyear
+    data_frame["hour"] = data_frame.datetime.dt.hour
+    data_frame.set_index("datetime", inplace=True, drop=False)
+    data_frame.index.name = "Timestamp"
 
     return data_frame
 
