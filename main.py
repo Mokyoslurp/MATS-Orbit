@@ -5,12 +5,14 @@ from functions import (
     propagate_all,
     build_data_frame,
     build_eclipse_data_frame,
+    build_orbit_parameters_data_frame,
     plot_elevation,
     plot_earth_2D,
     plot_earth_3D,
     plot_local_orbit,
     plot_global_orbit,
     plot_sza,
+    plot_apses,
 )
 
 from org.orekit.propagation.analytical.tle import TLE
@@ -27,6 +29,7 @@ mats_pv_vectors, mats_events = propagate_all(mats_tles, start_date, end_date)
 
 mats_data_frame = build_data_frame(mats_pv_vectors, INERTIAL_FRAME, ESRANGE_FRAME)
 mats_eclipse_data_frame = build_eclipse_data_frame(mats_events)
+mats_orbital_parameters_data_frame = build_orbit_parameters_data_frame(mats_tles)
 
 
 # ISS:
@@ -48,6 +51,8 @@ iss_eclipse_data_frame = build_eclipse_data_frame(iss_events)
 # plot_earth_2D(mats_data_frame)
 # print(mats_eclipse_data_frame.head())
 
-plot_sza([mats_data_frame, iss_data_frame])
-plot_local_orbit([mats_data_frame, iss_data_frame])
-plot_global_orbit([mats_data_frame, iss_data_frame])
+# plot_sza([mats_data_frame, iss_data_frame])
+# plot_local_orbit([mats_data_frame, iss_data_frame])
+# plot_global_orbit([mats_data_frame, iss_data_frame])
+
+plot_apses(mats_orbital_parameters_data_frame)
