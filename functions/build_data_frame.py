@@ -129,11 +129,11 @@ def build_orbit_parameters_data_frame(tles: list[TLE]):
         n.append(tle.getMeanMotion())
         e.append(tle.getE())
 
-        a.append((Constants.WGS84_EARTH_MU * (86400 / (2 * pi * n[-1])) ** 2) ** (1 / 3))
+        a.append(((Constants.WGS84_EARTH_MU * (86400 / (2 * pi * n[-1])) ** 2) ** (1 / 3)) / 10e3)
         rp.append(a[-1] * (1 - e[-1]))
         ra.append(a[-1] * (1 + e[-1]))
-        hp.append(rp[-1] - Constants.WGS84_EARTH_EQUATORIAL_RADIUS)
-        ha.append(ra[-1] - Constants.WGS84_EARTH_EQUATORIAL_RADIUS)
+        hp.append(rp[-1] - Constants.WGS84_EARTH_EQUATORIAL_RADIUS / 10e3)
+        ha.append(ra[-1] - Constants.WGS84_EARTH_EQUATORIAL_RADIUS / 10e3)
 
     data = zip(tles, dates, n, e, a, rp, ra, hp, ha)
 
