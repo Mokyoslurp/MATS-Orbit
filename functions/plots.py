@@ -108,7 +108,7 @@ def plot_earth_2D(data_frame: pd.DataFrame):
 def plot_apses(data_frame: pd.DataFrame):
     fig = px.line(
         data_frame,
-        y=["perigee", "apogee"],
+        y=["apogee", "perigee", "semi_major_axis"],
         x="datetime",
         hover_name="datetime",
     )
