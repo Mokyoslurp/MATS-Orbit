@@ -1,25 +1,45 @@
+import plotly.express as px
+import plotly.graph_objects as go
+import geopandas
+import matplotlib.pyplot as plt
 import pandas as pd
 from math import pi
 import numpy as np
-from datetime import datetime
 
 from org.hipparchus.geometry.euclidean.threed import Vector3D  # type: ignore
 
 from orekit.pyhelpers import absolutedate_to_datetime
-from org.orekit.utils import TimeStampedPVCoordinates, Constants  # type: ignore
-from org.orekit.frames import Frame  # type: ignore
-from org.orekit.propagation.events import EventsLogger  # type: ignore
-from org.orekit.propagation.analytical.tle import TLE  # type: ignore
+from org.orekit.utils import TimeStampedPVCoordinates  # type: ignore
 from org.orekit.frames import StaticTransform  # type: ignore
+from org.orekit.propagation import Propagator  # type: ignore
 from org.orekit.time import AbsoluteDate  # type: ignore
 
 
-from .constants import EARTH, SUN, INERTIAL_FRAME
+from .constants import EARTH, SUN, INERTIAL_FRAME, ESRANGE_FRAME
 
 
-def build_data_frame(
-    pv_vectors: list[TimeStampedPVCoordinates], inertial_frame: Frame, station_frame: Frame = None
-) -> pd.DataFrame:
+def _propagate_trajectory(
+    propagator: Propagator,
+    start_date: AbsoluteDate,
+    end_date: AbsoluteDate,
+    time_step: float = 10.0,
+):
+    pv_vectors: list[TimeStampedPVCoordinates] = []
+
+    extrapolated_date = start_date
+
+    while extrapolated_date.compareTo(end_date) <= 0.0:
+        # Get Position and velocity
+        pv = propagator.getPVCoordinates(extrapolated_date, INERTIAL_FRAME)
+        pv_vectors.append(pv)
+
+        # Increment date
+        extrapolated_date = extrapolated_date.shiftedBy(time_step)
+
+    return pv_vectors
+
+
+def get_trajectory(pv_vectors: list[TimeStampedPVCoordinates]) -> pd.DataFrame:
     """Populates a data frame of some satellite orbital parameters and variables.
 
     Variables in data frame :
@@ -28,6 +48,8 @@ def build_data_frame(
     :param pv_vectors: A list of TimeStampedPVCoordinates of the satellite through time
     :return: The populated data frame
     """
+    station_frame = ESRANGE_FRAME
+
     # Lists initialization
     earth_positions: list[Vector3D] = []
     positions: list[Vector3D] = []
@@ -76,18 +98,18 @@ def build_data_frame(
 
     data_frame["position"] = data_frame["pv"].apply(lambda x: x.getPosition())
     data_frame["elevation"] = data_frame["pv"].apply(
-        lambda x: station_frame.getElevation(x.getPosition(), inertial_frame, x.getDate())
+        lambda x: station_frame.getElevation(x.getPosition(), INERTIAL_FRAME, x.getDate())
         * 180.0
         / pi
     )
     data_frame["azimuth"] = data_frame["pv"].apply(
-        lambda x: station_frame.getAzimuth(x.getPosition(), inertial_frame, x.getDate())
+        lambda x: station_frame.getAzimuth(x.getPosition(), INERTIAL_FRAME, x.getDate())
         * 180.0
         / pi
     )
 
     data_frame["ground_point"] = data_frame["pv"].apply(
-        lambda pv: EARTH.transform(pv.position, inertial_frame, pv.date)
+        lambda pv: EARTH.transform(pv.position, INERTIAL_FRAME, pv.date)
     )
     data_frame["latitude"] = np.degrees(data_frame.ground_point.apply(lambda gp: gp.latitude))
     data_frame["longitude"] = np.degrees(data_frame.ground_point.apply(lambda gp: gp.longitude))
@@ -113,78 +135,97 @@ def build_data_frame(
     return data_frame
 
 
-def build_orbit_parameters_data_frame(tles: list[TLE]):
-    dates: list[datetime] = []
-    n: list[float] = []
-    e: list[float] = []
-    a: list[float] = []
-    rp: list[float] = []
-    ra: list[float] = []
-    hp: list[float] = []
-    ha: list[float] = []
-    i: list[float] = []
-    omega: list[float] = []
-    raan: list[float] = []
+def plot_local_orbit(data_frame: pd.DataFrame):
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter3d(
+            x=data_frame["x_local"],
+            y=data_frame["y_local"],
+            z=data_frame["z_local"],
+        )
+    )
+    fig.add_trace(go.Scatter3d(x=[0, 0], y=[0, 0], z=[0, 0]))
 
-    for tle in tles:
-        dates.append(absolutedate_to_datetime(tle.getDate()))
+    fig.show()
 
-        n.append(tle.getMeanMotion())
-        e.append(tle.getE())
-        i.append(tle.getI())
-        raan.append(tle.getRaan())
-        omega.append(tle.getPerigeeArgument())
 
-        a.append(((Constants.WGS84_EARTH_MU * (86400 / (2 * pi * n[-1])) ** 2) ** (1 / 3)) / 10e3)
-        rp.append(a[-1] * (1 - e[-1]))
-        ra.append(a[-1] * (1 + e[-1]))
-        hp.append(rp[-1] - Constants.WGS84_EARTH_EQUATORIAL_RADIUS / 10e3)
-        ha.append(ra[-1] - Constants.WGS84_EARTH_EQUATORIAL_RADIUS / 10e3)
+def plot_global_orbit(data_frame: pd.DataFrame):
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter3d(
+            x=data_frame["x"],
+            y=data_frame["y"],
+            z=data_frame["z"],
+        )
+    )
+    fig.add_trace(
+        go.Scatter3d(
+            x=data_frame["x_earth"],
+            y=data_frame["y_earth"],
+            z=data_frame["z_earth"],
+        )
+    )
+    fig.show()
 
-    data = zip(tles, dates, n, e, a, rp, ra, hp, ha, i, raan, omega)
 
-    data_frame = pd.DataFrame(
-        data=data,
-        columns=[
-            "tle",
-            "datetime",
-            "mean_motion",
-            "eccentricity",
-            "semi_major_axis",
-            "perigee",
-            "apogee",
-            "perigee_altitude",
-            "apogee_altitude",
-            "inclination",
-            "raan",
-            "perigee_argument",
-        ],
+def plot_sza(data_frame: pd.DataFrame):
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=data_frame["datetime"],
+            y=data_frame["sza"],
+        )
+    )
+    fig.show()
+
+
+def plot_elevation(data_frame: pd.DataFrame):
+    fig = px.line(
+        data_frame[data_frame.elevation > 0],
+        y="elevation",
+        x="datetime",
+        hover_name="datetime",
+        hover_data=["azimuth", "elevation", "latitude", "longitude"],
     )
 
-    data_frame["day"] = data_frame.datetime.dt.dayofyear
-    data_frame["hour"] = data_frame.datetime.dt.hour
-    data_frame.set_index("datetime", inplace=True, drop=False)
-    data_frame.index.name = "Timestamp"
-
-    return data_frame
+    fig.show()
 
 
-def build_eclipse_data_frame(events: list[EventsLogger.LoggedEvent]):
-    start_time = None
-    result = []
+def plot_earth_3D(data_frame: pd.DataFrame):
+    fig = px.scatter_geo(
+        data_frame,
+        color="visible",
+        lat="latitude",
+        lon="longitude",
+        opacity=0.3,
+        hover_data=["elevation", "azimuth"],
+        projection="orthographic",
+    )
 
-    for event in events:
-        if not event.isIncreasing():
-            start_time = event.getState().getDate()
-        elif start_time:
-            stop_time = event.getState().getDate()
-            result.append(
-                {
-                    "Start": absolutedate_to_datetime(start_time),
-                    "Stop": absolutedate_to_datetime(stop_time),
-                    "EclipseDuration": stop_time.durationFrom(start_time) / 60,
-                }
-            )
-            start_time = None
-    result_df = pd.DataFrame.from_dict(result)
-    return result_df
+    fig.show()
+
+
+def plot_earth_2D(data_frame: pd.DataFrame):
+    # Getting world map data from geo pandas
+    url = "https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip"
+    worldmap = geopandas.read_file(url)
+
+    # Creating axes and plotting world map
+    fig, ax = plt.subplots(figsize=(16, 10))
+    worldmap.plot(color="lightgrey", ax=ax)
+
+    plt.scatter(
+        x=data_frame["longitude"],
+        y=data_frame["latitude"],
+        c=data_frame["visible"],
+        alpha=0.6,
+    )
+
+    # Creating axis limits and title
+    plt.xlim([-180, 180])
+    plt.ylim([-90, 90])
+
+    plt.title("Ground track")
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.show()
