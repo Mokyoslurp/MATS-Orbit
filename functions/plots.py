@@ -105,10 +105,19 @@ def plot_earth_2D(data_frame: pd.DataFrame):
     plt.show()
 
 
-def plot_apses(data_frame: pd.DataFrame):
+def plot_orbital_parameters(data_frame: pd.DataFrame):
     fig = px.line(
         data_frame,
-        y=["apogee", "perigee", "semi_major_axis"],
+        y=[
+            "semi_major_axis",
+            "mean_motion",
+            "eccentricity",
+            "inclination",
+            "apogee",
+            "perigee",
+            "perigee_argument",
+            "raan",
+        ],
         x="datetime",
         hover_name="datetime",
     )
