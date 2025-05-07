@@ -123,3 +123,12 @@ def plot_orbital_parameters(data_frame: pd.DataFrame):
     )
 
     fig.show()
+
+
+def plot_ellipse(data_frame: pd.DataFrame):
+    fig = px.line(
+        data_frame,
+        x="Start",
+        y="EclipseDuration",
+    )
+    fig.show()

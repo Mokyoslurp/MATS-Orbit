@@ -20,6 +20,7 @@ from .plots import (  # noqa: E402
     plot_local_orbit,
     plot_sza,
     plot_orbital_parameters,
+    plot_ellipse,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     plot_global_orbit,
     plot_local_orbit,
     plot_orbital_parameters,
+    plot_ellipse,
 ]
