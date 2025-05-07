@@ -17,6 +17,7 @@ from .trajectory import (  # noqa: E402
     plot_local_orbit,
     plot_sza,
 )
+from .dst import get_dsts, plot_dsts  # noqa: E402
 from .loop import loop_on_tles  # noqa: E402
 
 
@@ -30,6 +31,7 @@ __all__ = [
     get_eclipse,
     get_trajectory,
     get_orbital_parameters,
+    get_dsts,
     plot_eclipse,
     plot_earth_2D,
     plot_earth_3D,
@@ -38,4 +40,5 @@ __all__ = [
     plot_local_orbit,
     plot_sza,
     plot_orbital_parameters,
+    plot_dsts,
 ]
