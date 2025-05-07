@@ -118,7 +118,7 @@ def propagate_all(
                 next_date = end_date
 
         pv_vectors += propagate_one(tle, date, next_date, time_step)
-        events += detect_events(tle, start_date, end_date, detectors)
+        events += detect_events(tle, date, next_date, detectors)
 
         date = next_date
 
