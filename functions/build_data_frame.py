@@ -122,12 +122,18 @@ def build_orbit_parameters_data_frame(tles: list[TLE]):
     ra: list[float] = []
     hp: list[float] = []
     ha: list[float] = []
+    i: list[float] = []
+    omega: list[float] = []
+    raan: list[float] = []
 
     for tle in tles:
         dates.append(absolutedate_to_datetime(tle.getDate()))
 
         n.append(tle.getMeanMotion())
         e.append(tle.getE())
+        i.append(tle.getI())
+        raan.append(tle.getRaan())
+        omega.append(tle.getPerigeeArgument())
 
         a.append(((Constants.WGS84_EARTH_MU * (86400 / (2 * pi * n[-1])) ** 2) ** (1 / 3)) / 10e3)
         rp.append(a[-1] * (1 - e[-1]))
@@ -135,7 +141,7 @@ def build_orbit_parameters_data_frame(tles: list[TLE]):
         hp.append(rp[-1] - Constants.WGS84_EARTH_EQUATORIAL_RADIUS / 10e3)
         ha.append(ra[-1] - Constants.WGS84_EARTH_EQUATORIAL_RADIUS / 10e3)
 
-    data = zip(tles, dates, n, e, a, rp, ra, hp, ha)
+    data = zip(tles, dates, n, e, a, rp, ra, hp, ha, i, raan, omega)
 
     data_frame = pd.DataFrame(
         data=data,
@@ -149,6 +155,9 @@ def build_orbit_parameters_data_frame(tles: list[TLE]):
             "apogee",
             "perigee_altitude",
             "apogee_altitude",
+            "inclination",
+            "raan",
+            "perigee_argument",
         ],
     )
 
